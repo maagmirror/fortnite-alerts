@@ -1,0 +1,17 @@
+{
+  "name": "fornite-alerts",
+  "version": "1.0.0",
+  "description": "Bot que avisa eventos de Fortnite por Telegram",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "dotenv": "^16.4.0",
+    "luxon": "^3.4.4",
+    "node-cron": "^3.0.3",
+    "node-telegram-bot-api": "^0.64.0"
+  }
+}
