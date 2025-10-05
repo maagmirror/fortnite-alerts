@@ -24,9 +24,8 @@ Enlace de referencia: [endpoint de noticias](https://dash.fortnite-api.com/endpo
    - Elegí un username único que termine en `bot` (p. ej. `fortnite_alerts_bot`)
    - BotFather te dará el token: guardalo como `TELEGRAM_BOT_TOKEN`.
 2. Obtené el `chat_id`:
-   - Escribí cualquier mensaje a tu bot (o añadilo a un grupo y mandá un mensaje ahí).
-   - Visitá: `https://api.telegram.org/bot<tu_token>/getUpdates`
-   - Buscá en la respuesta JSON el campo `chat.id` y usalo como `TELEGRAM_CHAT_ID`.
+   - Opción A (rápida con el bot): poné `SHOW_LOG_GROUP_ID=true` en `.env`, reiniciá y en el chat (DM o grupo) escribí `/id`. El bot responderá con `chat.id` y también lo verás en consola.
+   - Opción B (API de Telegram): escribí un mensaje al bot y visitá `https://api.telegram.org/bot<tu_token>/getUpdates` para leer `message.chat.id`.
 3. Probar envío manual (opcional):
    - `https://api.telegram.org/bot<tu_token>/sendMessage?chat_id=<tu_chat_id>&text=Prueba%20desde%20API`
 
@@ -50,6 +49,7 @@ SHOW_LOG_GROUP_ID=false
 - `CRON_SCHEDULE`: crontab de ejecución (por defecto, cada 6 horas).
 - `CRON_TZ`: zona horaria en la que se interpreta el cron.
 - `SHOW_LOG_GROUP_ID`: si es `true`, el bot escucha mensajes entrantes y loguea `chat.id` en consola.
+- `SEASON_EVENT_KEYWORDS`: lista separada por comas para detectar eventos especiales (por defecto: `final de temporada,evento en vivo,live event,season finale,gran evento,big bang`).
 
 ## Instalación y uso (host)
 
