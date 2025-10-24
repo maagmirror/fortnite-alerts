@@ -2,6 +2,8 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import TelegramBot from 'node-telegram-bot-api';
 import cron from 'node-cron';
+import fs from 'fs';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -34,6 +36,56 @@ if (!showLogGroupId) {
 }
 
 const bot = new TelegramBot(telegramBotToken, { polling: showLogGroupId });
+
+// Archivo para almacenar el último mensaje enviado
+const LAST_MESSAGE_FILE = 'last_message.json';
+
+// Función para generar hash del mensaje
+function generarHashMensaje(mensaje) {
+  return crypto.createHash('md5').update(mensaje).digest('hex');
+}
+
+// Función para leer el último mensaje enviado
+function leerUltimoMensaje() {
+  try {
+    if (fs.existsSync(LAST_MESSAGE_FILE)) {
+      const data = fs.readFileSync(LAST_MESSAGE_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error leyendo último mensaje:', error.message);
+  }
+  return null;
+}
+
+// Función para guardar el último mensaje enviado
+function guardarUltimoMensaje(mensaje, tipo = 'noticias') {
+  try {
+    const hash = generarHashMensaje(mensaje);
+    const data = {
+      hash,
+      mensaje,
+      tipo,
+      timestamp: new Date().toISOString(),
+    };
+    fs.writeFileSync(LAST_MESSAGE_FILE, JSON.stringify(data, null, 2));
+    console.log(
+      `Último mensaje guardado (${tipo}): ${hash.substring(0, 8)}...`
+    );
+  } catch (error) {
+    console.error('Error guardando último mensaje:', error.message);
+  }
+}
+
+// Función para verificar si el mensaje es diferente al último enviado
+function esMensajeNuevo(mensaje, tipo = 'noticias') {
+  const ultimoMensaje = leerUltimoMensaje();
+  if (!ultimoMensaje || ultimoMensaje.tipo !== tipo) {
+    return true;
+  }
+  const hashActual = generarHashMensaje(mensaje);
+  return ultimoMensaje.hash !== hashActual;
+}
 
 // Si SHOW_LOG_GROUP_ID=true, loguea cualquier mensaje entrante para capturar chat.id
 if (showLogGroupId) {
@@ -108,9 +160,20 @@ async function enviarNoticias(items, date) {
     return;
   }
   const mensaje = construirMensajeNoticias(items, date);
+
+  // Verificar si el mensaje es diferente al último enviado
+  if (!esMensajeNuevo(mensaje, 'noticias')) {
+    console.log(
+      'Mensaje de noticias idéntico al último enviado. Saltando envío.'
+    );
+    return;
+  }
+
   try {
     await bot.sendMessage(telegramChatId, mensaje);
     console.log(`Noticias enviadas (${items.length} items)`);
+    // Guardar el mensaje enviado
+    guardarUltimoMensaje(mensaje, 'noticias');
   } catch (err) {
     console.error('Error enviando mensaje:', err.message);
   }
@@ -149,9 +212,24 @@ async function enviarAlertaEventos(items) {
     mensaje += '\n';
   }
   mensaje += '(Detectado por palabras clave configurables)';
+  mensaje = mensaje.trim();
+
+  // Verificar si el mensaje de alerta es diferente al último enviado
+  if (!esMensajeNuevo(mensaje, 'eventos')) {
+    console.log(
+      'Mensaje de alerta de eventos idéntico al último enviado. Saltando envío.'
+    );
+    return;
+  }
+
   try {
-    await bot.sendMessage(telegramChatId, mensaje.trim());
-  } catch {}
+    await bot.sendMessage(telegramChatId, mensaje);
+    console.log('Alerta de eventos enviada');
+    // Guardar el mensaje enviado
+    guardarUltimoMensaje(mensaje, 'eventos');
+  } catch (err) {
+    console.error('Error enviando alerta de eventos:', err.message);
+  }
 }
 
 async function ejecutarChequeo() {
